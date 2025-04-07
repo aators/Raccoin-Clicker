@@ -1,81 +1,51 @@
 <!DOCTYPE html>
-<html>
-
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Increase coins by clicking raccoon, upgrade for more</title>
-
-  <style>
-    
-  </style>
-
-  
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raccoin Clicker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            padding: 50px;
+        }
+        #gameButton {
+            background-color: #4CAF50;
+            color: white;
+            font-size: 30px;
+            padding: 20px 40px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #gameButton:hover {
+            background-color: #45a049;
+        }
+        #score {
+            font-size: 30px;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-  <!DOCTYPE html>
-<html>
-<head>
-  <title>Raccoon Clicker</title>
-  <style>
-    body {
-      background-color: #1c1c1e;
-      color: white;
-      font-family: sans-serif;
-      text-align: center;
-      margin-top: 50px;
-    }
-    #coin {
-      width: 150px;
-      cursor: pointer;
-    }
-    .button {
-      margin-top: 20px;
-      padding: 10px 20px;
-      background-color: #444;
-      border: none;
-      color: white;
-      font-size: 18px;
-      border-radius: 10px;
-    }
-  </style>
-</head>
-<body>
-  <h1>Raccoon Clicker</h1>
-  <img id="coin" src="https://i.ibb.co/TPx4TwP/raccoon.png" alt="Raccoon" />
-  <h2>Coins: <span id="counter">0</span></h2>
-  <button class="button" onclick="upgrade()">Upgrade (10 coins)</button>
+    <h1>Raccoin Clicker</h1>
+    <button id="gameButton">Napauta tätä!</button>
+    <div id="score">Pisteet: 0</div>
 
-  <script>
-    let coins = 0;
-    let multiplier = 1;
+    <script>
+        // Pelin alustus
+        let score = 0;
+        const gameButton = document.getElementById('gameButton');
+        const scoreDisplay = document.getElementById('score');
 
-    const coinImg = document.getElementById('coin');
-    const counter = document.getElementById('counter');
-
-    coinImg.onclick = () => {
-      coins += multiplier;
-      counter.innerText = coins;
-    };
-
-    function upgrade() {
-      if (coins >= 10) {
-        coins -= 10;
-        multiplier++;
-        counter.innerText = coins;
-        alert("Upgrade successful! Now you get " + multiplier + " coins per click.");
-      } else {
-        alert("Not enough coins!");
-      }
-    }
-  </script>
-</body>
-</html>
-
-
-  <script>
-    
-  </script>
+        // Napautuslogiikka
+        gameButton.addEventListener('click', function() {
+            score++;  // Lisää piste
+            scoreDisplay.textContent = 'Pisteet: ' + score;  // Päivitä pisteet
+        });
+    </script>
 </body>
 </html>
