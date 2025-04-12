@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pesukarhukainen</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #000;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background-color: #000;
+      touch-action: none;
+    }
+    #mobile-controls {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+      gap: 10px;
+    }
+    .control-btn {
+      background: #333;
+      color: #fff;
+      font-size: 24px;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="gameCanvas" width="480" height="480"></canvas>
+  <div id="mobile-controls">
+    <button class="control-btn" onclick="setDirection('left')">←</button>
+    <button class="control-btn" onclick="setDirection('up')">↑</button>
+    <button class="control-btn" onclick="setDirection('down')">↓</button>
+    <button class="control-btn" onclick="setDirection('right')">→</button>
+  </div>
+  <audio id="gameMusic" src="Pac-Karhu.mp3" loop></audio>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const tileSize = 24;
+    const cols = canvas.width / tileSize;
+    const rows = canvas.height / tileSize;
+
+    const raccoon = new Image();
+    raccoon.src = "raccoon.png";
+
+    const coinImg = new Image();
+    coinImg.src = "coin.png";
+
+    const birdImg = new Image();
+    birdImg.src = "bird.png";
+
+    const collectSound = new Audio("kerää.mp3");
+    const gameMusic = document.getElementById("gameMusic");
+    gameMusic.volume = 0.4;
+
+    let map = [
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+      [1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+      [1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+      [1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1],
+      [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+      [1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+      [1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1],
+      [1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+      [1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+      [1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1],
+      [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    ];
+
+    let player = {
+      x: 1,
+      y: 1,
+      dir: { x: 0, y: 0 },
+      nextDir: { x: 0, y: 0 },
+      lives: 3,
+      score: 0
+    };
+
+    let enemies = [];
+    for (let i = 0; i < 3; i++) {
+      enemies.push({
+        x: Math.floor(Math.random() * cols),
+        y: Math.floor(Math.random() * rows),
+        dir: { x: 0, y: 1 }
+      });
+    }
+
+    let moveDelay = 0;
+    const moveInterval = 10; // Muuta tätä arvoa säätääksesi liikkumisen nopeuden
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Draw map
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          if (map[y][x] === 1) {
+            ctx.fillStyle = "#000";
+            ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+          } else if (map[y][x] === 0) {
+            ctx.drawImage(coinImg, x * tileSize, y * tileSize, tileSize, tileSize);
+          }
+        }
+      }
+
+      // Draw enemies
+      enemies.forEach(e => {
+        ctx.drawImage(birdImg, e.x * tileSize, e.y * tileSize, tileSize, tileSize);
+      });
+
+      // Draw player
+      ctx.drawImage(raccoon, player.x * tileSize, player.y * tileSize, tileSize, tileSize);
+
+      // Draw UI
+      ctx.fillStyle = "white";
+      ctx.fillText("Pisteet: " + player.score, 10, 20);
+      ctx.fillText("Elämät: " + player.lives, 10, 40);
+    }
+
+    function update() {
+      if (moveDelay < moveInterval) {
+        moveDelay++;
+        return;
+      }
+      moveDelay = 0;
+
+      // Move player
+      if (map[player.y + player.dir.y][player.x + player.dir.x] !== 1) {
+        player.x += player.dir.x;
+        player.y += player.dir.y;
+      }
+      player.dir = player.nextDir;
+
+      // Coin collection
+      if (map[player.y][player.x] === 0) {
+        map[player.y][player.x] = 1;
+        player.score += 10;
+        collectSound.play();
+      }
+
+      // Enemy collision
+      enemies.forEach(e => {
+        if (e.x === player.x && e.y === player.y) {
+          player.lives--;
+          if (player.lives <= 0) {
+            alert("Peli päättyi, aloita alusta!");
+            resetGame();
+          } else {
+            player.x = 1;
+            player.y = 1;
+            player.dir = { x: 0, y: 0 };
+            player.nextDir = { x: 0, y: 0 };
+          }
+        }
+      });
+
+      // Move enemies
+      enemies.forEach(e => {
+        const dirs = [
+          { x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }
+        ];
+        const dir = dirs[Math.floor(Math.random() * dirs.length)];
+        if (map[e.y + dir.y][e.x + dir.x] !== 1) {
+          e.x += dir.x;
+          e.y += dir.y;
+        }
+      });
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "ArrowLeft") setDirection("left");
+      if (e.key === "ArrowRight") setDirection("right");
+      if (e.key === "ArrowUp") setDirection("up");
+      if (e.key === "ArrowDown") setDirection("down");
+    });
+
+    function setDirection(dir) {
+      if (dir === "left") player.nextDir = { x: -1, y: 0 };
+      if (dir === "right") player.nextDir = { x: 1, y: 0 };
+      if (dir === "up") player.nextDir = { x: 0, y: -1 };
+      if (dir === "down") player.nextDir = { x: 0, y: 1 };
+    }
+
+    function resetGame() {
+      player.x = 1;
+      player.y = 1;
+      player.dir = { x: 0, y: 0 };
+      player.nextDir = { x: 0, y: 0 };
+      player.lives = 3;
+      player.score = 0;
+      enemies = [];
+      for (let i = 0; i < 3; i++) {
+        enemies.push({
+          x: Math.floor(Math.random() * cols),
+          y: Math.floor(Math.random() * rows),
+          dir: { x: 0, y: 1 }
+        });
+      }
+      map = [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+        [1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1],
+        [1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+        [1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+        [1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1],
+        [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+        [1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+        [1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1],
+        [1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+        [1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+                [1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1],
+        [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+      ];
+    }
+
+    function startGame() {
+      gameMusic.play();
+      gameLoop();
+    }
+
+    function resetGame() {
+      player.x = 1;
+      player.y = 1;
+      player.dir = { x: 0, y: 0 };
+      player.nextDir = { x: 0, y: 0 };
+      player.lives = 3;
+      player.score = 0;
+      enemies = [];
+      for (let i = 0; i < 3; i++) {
+        enemies.push({
+          x: Math.floor(Math.random() * cols),
+          y: Math.floor(Math.random() * rows),
+          dir: { x: 0, y: 1 }
+        });
+      }
+      map = [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+        [1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1],
+        [1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+        [1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+        [1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1],
+        [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+        [1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+        [1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1],
+        [1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+        [1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+        [1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1],
+        [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+      ];
+    }
+
+    startGame();
+  </script>
+</body>
+
+</html>

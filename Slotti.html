@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <title>Slottikone</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel&family=UnifrakturCook&family=Righteous&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: 'Cinzel', serif;
+      background-color: #111;
+      color: #eee;
+      text-align: center;
+      padding: 20px;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    h1 {
+      font-family: 'Righteous', cursive;
+      font-size: 2.5rem;  /* Muutettu fonttikoko */
+      margin-bottom: 20px;
+      color: #ff0000;
+      text-shadow: 0 0 10px #900, 0 0 30px #ff0080;
+    }
+
+    #stats {
+      margin-bottom: 20px;
+      font-size: 1.2rem;
+      text-shadow: 0 0 5px #900, 0 0 10px #ff0080;
+    }
+
+    button {
+      background: linear-gradient(45deg, #9b4d96, #57048c);
+      color: white;
+      border: none;
+      padding: 15px 25px;
+      margin-bottom: 30px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 0 10px #000;
+      transition: all 0.3s ease-in-out;
+      border-radius: 8px;
+    }
+
+    button:hover {
+      transform: scale(1.1);
+      background: linear-gradient(45deg, #57048c, #9b4d96);
+    }
+
+    #slots {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 30px;
+      gap: 20px;
+    }
+
+    .slot {
+      width: 100px;
+      height: 100px;
+      margin: 0 10px;
+      background-color: #222;
+      color: #fff;
+      font-size: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+    }
+
+    .slot:hover {
+      background-color: #444;
+      transform: scale(1.1);
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+    }
+
+    audio {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Slottikone</h1>
+  <div id="stats">
+    <span id="balance">Kolikot: 100</span> | 
+    <span id="bet">Panos: 10</span>
+  </div>
+  <button onclick="spin()">Pelaa</button>
+  <div id="slots">
+    <div class="slot" id="slot1">🍒</div>
+    <div class="slot" id="slot2">🍇</div>
+    <div class="slot" id="slot3">🍉</div>
+  </div>
+
+  <audio id="spinSound" src="spin.mp3"></audio>
+  <audio id="winSound" src="win.mp3"></audio>
+  <audio id="bgMusic" src="Slottikone.mp3" loop></audio>
+
+  <script>
+    // Haetaan saldo localStorage:stä, tai asetetaan oletussaldo
+    let balance = parseInt(localStorage.getItem("coins") || "100");
+    const bet = 10;
+
+    const balanceDisplay = document.getElementById('balance');
+    const betDisplay = document.getElementById('bet');
+    const spinSound = document.getElementById('spinSound');
+    const winSound = document.getElementById('winSound');
+    const bgMusic = document.getElementById('bgMusic');
+
+    spinSound.volume = 0.1;
+
+    // Funktio, joka päivittää saldo UI:ssa ja tallentaa sen localStorageen
+    function updateBalance() {
+      balanceDisplay.textContent = `Kolikot: ${balance}`;
+      localStorage.setItem("coins", balance); // Tallennetaan saldo localStorageen
+    }
+
+    // Funktio pelin pyöräytykselle
+    function spin() {
+      if (bgMusic.paused) {
+        bgMusic.volume = 0.3;
+        bgMusic.play().catch(err => console.log("Taustamusiikkia ei voitu toistaa:", err));
+      }
+
+      if (balance < bet) {
+        alert("Saldo ei riitä!");
+        return;
+      }
+
+      balance -= bet;
+      updateBalance(); // Päivitetään saldo
+      spinSound.play();
+
+      const fruits = ["🍒", "🍇", "🍉", "🍊", "🍋"];
+      const slot1 = document.getElementById('slot1');
+      const slot2 = document.getElementById('slot2');
+      const slot3 = document.getElementById('slot3');
+
+      slot1.textContent = fruits[Math.floor(Math.random() * fruits.length)];
+      slot2.textContent = fruits[Math.floor(Math.random() * fruits.length)];
+      slot3.textContent = fruits[Math.floor(Math.random() * fruits.length)];
+
+      setTimeout(() => {
+        checkWin(slot1.textContent, slot2.textContent, slot3.textContent);
+      }, 1000);
+    }
+
+    // Funktio tarkistaa, voittiko pelaaja
+    function checkWin(symbol1, symbol2, symbol3) {
+      if (symbol1 === symbol2 && symbol2 === symbol3) {
+        winSound.play();
+        balance += bet * 5;
+        updateBalance(); // Päivitetään saldo
+        alert("Voitit!");
+
+        // Päivitetään Raccoin Clicker -pelin saldo (jos se on auki)
+        const coinsElement = window.opener?.document.getElementById('coins');
+        if (coinsElement) {
+          coinsElement.textContent = parseInt(coinsElement.textContent) + (bet * 5);
+        }
+      } else {
+        alert("Hävisit!");
+      }
+    }
+
+    // Päivitetään saldo UI:ssa pelin alussa
+    updateBalance();
+  </script>
+
+</body>
+</html>

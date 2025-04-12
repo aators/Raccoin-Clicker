@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <title>Miinakenttä</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: 'Cinzel', serif;
+      background-color: #111;
+      color: #eee;
+      text-align: center;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      font-family: 'UnifrakturCook', cursive;
+      font-size: 3rem;
+      margin-bottom: 10px;
+      animation: fadeIn 2s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    #stats {
+      margin-bottom: 20px;
+      font-size: 1.2rem;
+    }
+
+    button {
+      background-color: #444;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      margin-bottom: 20px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #555;
+    }
+
+    #game {
+      display: grid;
+      grid-template-columns: repeat(9, 40px);
+      grid-gap: 2px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .cell {
+      width: 40px;
+      height: 40px;
+      background-color: #222;
+      color: #fff;
+      border: 1px solid #555;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .cell:hover {
+      background-color: #333;
+      transform: scale(1.05);
+    }
+
+    .cell.revealed {
+      background-color: #333;
+      cursor: default;
+    }
+
+    .cell.mine {
+      background-color: #900;
+    }
+
+    .cell.mine img {
+      width: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Miinakenttä</h1>
+  <div id="stats">
+    <span id="score">Pisteet: 0</span> |
+    <span id="timer">Aikaa jäljellä: 60s</span>
+  </div>
+  <button onclick="startGame()">Aloita alusta</button>
+  <div id="game"></div>
+
+  <audio id="miinakenttaMusic" src="Miinakenttä.mp3" preload="auto" loop></audio>
+  <audio id="safeSound" src="jump.mp3"></audio>
+  <audio id="mineSound" src="kerää.mp3"></audio>
+
+  <script>
+    const gridSize = 9;
+    const mineCount = 10;
+    let grid = [];
+    let score = 0;
+    let timer;
+    let timeLeft = 60;
+
+    const scoreDisplay = document.getElementById('score');
+    const timerDisplay = document.getElementById('timer');
+    const safeSound = document.getElementById('safeSound');
+    const mineSound = document.getElementById('mineSound');
+    const miinakenttaMusic = document.getElementById('miinakenttaMusic');
+
+    // Käynnistää pelimusiikin
+    function startMusic() {
+      miinakenttaMusic.play().catch(error => {
+        console.log("Ääni ei käynnistynyt automaattisesti: ", error);
+      });
+    }
+
+    function startGame() {
+      startMusic(); // Pelimusiikki käynnistyy, kun peli alkaa
+      createGrid(); // Käynnistää pelin
+    }
+
+    function createGrid() {
+      const game = document.getElementById('game');
+      game.innerHTML = '';
+      grid = [];
+      score = 0;
+      updateScore();
+
+      for (let i = 0; i < gridSize; i++) {
+        grid[i] = [];
+        for (let j = 0; j < gridSize; j++) {
+          const cell = document.createElement('div');
+          cell.classList.add('cell');
+          cell.dataset.row = i;
+          cell.dataset.col = j;
+          cell.addEventListener('click', handleCellClick);
+          game.appendChild(cell);
+          grid[i][j] = {
+            element: cell,
+            mine: false,
+            revealed: false,
+            adjacentMines: 0
+          };
+        }
+      }
+
+      placeMines();
+      calculateAdjacents();
+      startTimer();
+    }
+
+    function placeMines() {
+      let placed = 0;
+      while (placed < mineCount) {
+        const row = Math.floor(Math.random() * gridSize);
+        const col = Math.floor(Math.random() * gridSize);
+        if (!grid[row][col].mine) {
+          grid[row][col].mine = true;
+          placed++;
+        }
+      }
+    }
+
+    function calculateAdjacents() {
+      for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+          if (grid[i][j].mine) continue;
+          let count = 0;
+          for (let x = -1; x <= 1; x++) {
+            for (let y = -1; y <= 1; y++) {
+              const ni = i + x;
+              const nj = j + y;
+              if (ni >= 0 && ni < gridSize && nj >= 0 && nj < gridSize) {
+                if (grid[ni][nj].mine) count++;
+              }
+            }
+          }
+          grid[i][j].adjacentMines = count;
+        }
+      }
+    }
+
+    function handleCellClick(e) {
+      const row = parseInt(e.target.dataset.row);
+      const col = parseInt(e.target.dataset.col);
+      const cell = grid[row][col];
+
+      if (cell.revealed) return;
+
+      cell.revealed = true;
+      cell.element.classList.add('revealed');
+
+      if (cell.mine) {
+        const img = document.createElement('img');
+        img.src = 'bird.png';
+        img.style.width = '30px';
+        cell.element.innerHTML = '';
+        cell.element.appendChild(img);
+        cell.element.classList.add('mine');
+        mineSound.play();
+        alert('Peli päättyi!');
+        stopTimer();
+        revealAll();
+      } else {
+        score++;
+        updateScore();
+        safeSound.play();
+        if (cell.adjacentMines > 0) {
+          cell.element.textContent = cell.adjacentMines;
+        } else {
+          revealEmptyCells(row, col);
+        }
+      }
+    }
+
+    function revealEmptyCells(row, col) {
+      for (let x = -1; x <= 1; x++) {
+        for (let y = -1; y <= 1; y++) {
+          const ni = row + x;
+          const nj = col + y;
+          if (ni >= 0 && ni < gridSize && nj >= 0 && nj < gridSize) {
+            const neighbor = grid[ni][nj];
+            if (!neighbor.revealed && !neighbor.mine) {
+              neighbor.revealed = true;
+              neighbor.element.classList.add('revealed');
+              score++;
+              updateScore();
+              if (neighbor.adjacentMines > 0) {
+                neighbor.element.textContent = neighbor.adjacentMines;
+              } else {
+                revealEmptyCells(ni, nj);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    function revealAll() {
+      for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+          const cell = grid[i][j];
+          if (!cell.revealed) {
+            cell.revealed = true;
+            cell.element.classList.add('revealed');
+            if (cell.mine) {
+              const img = document.createElement('img');
+              img.src = 'bird.png';
+              img.style.width = '30px';
+              cell.element.innerHTML = '';
+              cell.element.appendChild(img);
+              cell.element.classList.add('mine');
+            } else if (cell.adjacentMines > 0) {
+              cell.element.textContent = cell.adjacentMines;
+            }
+          }
+        }
+      }
+    }
+
+    function updateScore() {
+      scoreDisplay.textContent = `Pisteet: ${score}`;
+    }
+
+    function startTimer() {
+      stopTimer();
+      timeLeft = 60;
+      timerDisplay.textContent = `Aikaa jäljellä: ${timeLeft}s`;
+      timer = setInterval(() => {
+        timeLeft--;
+        timerDisplay.textContent = `Aikaa jäljellä: ${timeLeft}s`;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          alert("Aika loppui!");
+          revealAll();
+        }
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timer);
+    }
+  </script>
+</body>
+</html>

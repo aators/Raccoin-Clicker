@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pesukarhukainen</title>
+  <style>
+    body {
+      margin: 0;
+      background: #0d0d0d;
+      font-family: 'Arial', sans-serif;
+      color: #eee;
+      text-align: center;
+    }
+
+    #start-screen, #game-over {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(20, 20, 20, 0.9);
+      padding: 30px;
+      border: 2px solid #666;
+      border-radius: 10px;
+      display: none;
+      z-index: 2;
+    }
+
+    #start-screen h1 {
+      font-size: 36px;
+      color: #a83232;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #222;
+      color: white;
+      border: 1px solid #555;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background-color: #1a1a1a;
+      border: 2px solid #444;
+    }
+
+    #scoreboard {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: #fff;
+      font-size: 18px;
+      z-index: 1;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div id="start-screen">
+    <h1>Pesukarhukainen</h1>
+    <button onclick="startGame()">Aloita</button>
+  </div>
+
+  <div id="scoreboard">
+    <div>Pisteet: <span id="score">0</span></div>
+    <div>Highscore: <span id="highscore">0</span></div>
+  </div>
+
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+  <div id="game-over">
+    <p>Peli päättyi, aloita alusta!</p>
+    <button onclick="restartGame()">Aloita alusta</button>
+  </div>
+
+  <audio id="collectSound" src="kerää.mp3" preload="auto"></audio>
+  <audio id="gameMusic" src="Pesukarhukainen.mp3" loop></audio>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let raccoon = { x: 100, y: 100, size: 40, speed: 4 };
+    let items = [];
+    let enemies = [];
+    let keys = {};
+    let score = 0;
+    let highscore = Number(localStorage.getItem('raccoon_highscore')) || 0;
+    let gameRunning = false;
+
+    const collectSound = document.getElementById('collectSound');
+    const gameMusic = document.getElementById('gameMusic');
+    gameMusic.volume = 0.4;
+
+    function loadImage(src) {
+      const img = new Image();
+      img.src = src;
+      return img;
+    }
+
+    const raccoonImg = loadImage('raccoon.png');
+    const itemImgs = ['pizza.png', 'fish.png', 'banana.png', 'coin.png', 'diamond.png'].map(loadImage);
+    const birdImg = loadImage('bird.png');
+
+    function drawRaccoon() {
+      ctx.drawImage(raccoonImg, raccoon.x, raccoon.y, raccoon.size, raccoon.size);
+    }
+
+    function spawnItem() {
+      const img = itemImgs[Math.floor(Math.random() * itemImgs.length)];
+      items.push({
+        x: Math.random() * (canvas.width - 30),
+        y: Math.random() * (canvas.height - 30),
+        size: 30,
+        img
+      });
+    }
+
+    function spawnEnemy() {
+      enemies.push({
+        x: Math.random() * (canvas.width - 30),
+        y: -40,
+        size: 40,
+        speed: 2 + Math.random() * 2
+      });
+    }
+
+    function drawItems() {
+      for (const item of items) {
+        ctx.drawImage(item.img, item.x, item.y, item.size, item.size);
+      }
+    }
+
+    function drawEnemies() {
+      for (const e of enemies) {
+        ctx.drawImage(birdImg, e.x, e.y, e.size, e.size);
+        e.y += e.speed;
+      }
+    }
+
+    function checkCollisions() {
+      items = items.filter(item => {
+        const dx = item.x - raccoon.x;
+        const dy = item.y - raccoon.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < 30) {
+          score += 10;
+          document.getElementById('score').innerText = score;
+          if (score > highscore) {
+            highscore = score;
+            localStorage.setItem('raccoon_highscore', highscore);
+            document.getElementById('highscore').innerText = highscore;
+          }
+          collectSound.play();
+          return false;
+        }
+        return true;
+      });
+
+      for (const enemy of enemies) {
+        const dx = enemy.x - raccoon.x;
+        const dy = enemy.y - raccoon.y;
+        if (Math.sqrt(dx * dx + dy * dy) < 35) {
+          gameOver();
+        }
+      }
+    }
+
+    function moveRaccoon() {
+      if (keys['ArrowUp']) raccoon.y -= raccoon.speed;
+      if (keys['ArrowDown']) raccoon.y += raccoon.speed;
+      if (keys['ArrowLeft']) raccoon.x -= raccoon.speed;
+      if (keys['ArrowRight']) raccoon.x += raccoon.speed;
+      raccoon.x = Math.max(0, Math.min(canvas.width - raccoon.size, raccoon.x));
+      raccoon.y = Math.max(0, Math.min(canvas.height - raccoon.size, raccoon.y));
+    }
+
+    function gameLoop() {
+      if (!gameRunning) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      moveRaccoon();
+      drawRaccoon();
+      drawItems();
+      drawEnemies();
+      checkCollisions();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function startGame() {
+      score = 0;
+      document.getElementById('score').innerText = score;
+      document.getElementById('highscore').innerText = highscore;
+      gameRunning = true;
+      items = [];
+      enemies = [];
+      raccoon.x = 100;
+      raccoon.y = 100;
+      document.getElementById('start-screen').style.display = 'none';
+      document.getElementById('game-over').style.display = 'none';
+      for (let i = 0; i < 5; i++) spawnItem();
+      setInterval(spawnItem, 3000);
+      setInterval(spawnEnemy, 2000);
+      gameLoop();
+      gameMusic.play();
+    }
+
+    function gameOver() {
+      gameRunning = false;
+      gameMusic.pause();
+      document.getElementById('game-over').style.display = 'block';
+    }
+
+    function restartGame() {
+      startGame();
+    }
+
+    document.addEventListener('keydown', e => keys[e.key] = true);
+    document.addEventListener('keyup', e => keys[e.key] = false);
+    document.getElementById('start-screen').style.display = 'block';
+  </script>
+</body>
+</html>

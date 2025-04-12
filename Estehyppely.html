@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estehyppely</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      overflow: hidden;
+      font-family: 'Press Start 2P', cursive;
+      user-select: none;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: radial-gradient(ellipse at center, #0d0d0d 0%, #000 100%);
+    }
+    button {
+      position: absolute;
+      padding: 12px 24px;
+      font-size: 18px;
+      background-color: #550000;
+      color: white;
+      border: 2px solid #aa0000;
+      border-radius: 10px;
+      cursor: pointer;
+      z-index: 10;
+      font-family: 'Press Start 2P', cursive;
+      box-shadow: 0 0 15px #aa0000;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 25px #ff0000;
+    }
+    #startBtn, #restartBtn {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    #leftBtn, #rightBtn {
+      bottom: 20px;
+      width: 80px;
+      height: 80px;
+      font-size: 36px;
+      border-radius: 50%;
+      background-color: rgba(0, 0, 0, 0.5);
+      border: 2px solid #ffffff;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px #ffffff;
+      transition: background-color 0.2s, transform 0.2s;
+    }
+    #leftBtn {
+      left: 10%;
+    }
+    #rightBtn {
+      right: 10%;
+    }
+    #leftBtn:hover, #rightBtn:hover {
+      background-color: rgba(0, 0, 0, 0.7);
+      transform: scale(1.1);
+    }
+    #scoreDisplay, #heightDisplay {
+      position: absolute;
+      top: 10px;
+      font-size: 14px;
+      color: #ffffff;
+      text-shadow: 0 0 5px #ff00ff;
+      z-index: 10;
+      font-family: 'Press Start 2P', cursive;
+    }
+    #scoreDisplay { left: 10px; }
+    #heightDisplay { right: 10px; }
+
+    .collectEffect {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: radial-gradient(circle, gold, transparent);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: glitter 0.6s ease-out forwards;
+    }
+    @keyframes glitter {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(2.5); opacity: 0; }
+    }
+
+    /* Lightning flash effect (fullscreen white blink) */
+    .flash {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: white;
+      opacity: 0.5;
+      z-index: 1000;
+      animation: flashAnim 0.2s ease-out;
+    }
+    @keyframes flashAnim {
+      0% { opacity: 0.8; }
+      100% { opacity: 0; display: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <button id="startBtn">Aloita peli</button>
+  <button id="restartBtn" style="display:none;">Peli päättyi – Alusta</button>
+  <button id="leftBtn">←</button>
+  <button id="rightBtn">→</button>
+  <div id="scoreDisplay">Kolikot: 0</div>
+  <div id="heightDisplay">Korkeus: 0</div>
+
+  <audio id="jumpSound" src="jump.mp3" preload="auto"></audio>
+  <audio id="collectSound" src="kerää.mp3" preload="auto"></audio>
+  <audio id="thunderSound" src="thunder.mp3" preload="auto"></audio>
+  <audio id="bgMusic" src="Estehyppely.mp3" loop preload="auto"></audio>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const startBtn = document.getElementById("startBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const leftBtn = document.getElementById("leftBtn");
+    const rightBtn = document.getElementById("rightBtn");
+    const scoreDisplay = document.getElementById("scoreDisplay");
+    const heightDisplay = document.getElementById("heightDisplay");
+    const jumpSound = document.getElementById("jumpSound");
+    const collectSound = document.getElementById("collectSound");
+    const thunderSound = document.getElementById("thunderSound");
+    const bgMusic = document.getElementById("bgMusic");
+
+    let doodle, platforms, items, enemies, score, highPoint, gravity, jumpVelocity;
+    let moveSpeed = 5;
+    let images = {};
+    let gameRunning = false;
+    const maxHeight = 1_000_000;
+
+    const itemTypes = ['pizza', 'fish', 'banana', 'coin', 'diamond'];
+    let rainDrops = [];
+    let fogParticles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function resetGame() {
+      resizeCanvas();
+      doodle = {
+        x: canvas.width / 2 - 25,
+        y: canvas.height / 2,
+        width: 50,
+        height: 60,
+        dx: 0,
+        dy: 0
+      };
+      gravity = 0.4;
+      jumpVelocity = -10;
+      score = parseInt(localStorage.getItem("raccoon_score")) || 0;
+      highPoint = doodle.y;
+      items = [];
+      enemies = [];
+      platforms = [];
+
+      platforms.push({ x: 0, y: canvas.height - 20, w: canvas.width, h: 15, dx: 0 });
+      for (let i = 1; i < 8; i++) spawnPlatform(canvas.height - i * 100);
+
+      createRain();
+      createFog();
+
+      scoreDisplay.innerText = "Kolikot: " + score;
+    }
+
+    function spawnPlatform(y) {
+      if ((canvas.height - y) > maxHeight) return;
+      let w = 60, h = 15;
+      let x = Math.random() * (canvas.width - w);
+      let dx = Math.random() < 0.3 ? (Math.random() < 0.5 ? -1 : 1) : 0;
+      platforms.push({ x, y, w, h, dx });
+      if (Math.random() < 0.5) {
+        const type = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+        items.push({ type, x: x + 15, y: y - 25, w: 30, h: 30 });
+      }
+    }
+
+    function spawnEnemy() {
+      const size = 40;
+      const x = Math.random() * (canvas.width - size);
+      enemies.push({ x, y: doodle.y - canvas.height - Math.random() * 200, w: size, h: size });
+    }
+
+    function createCollectEffect(x, y) {
+      const effect = document.createElement("div");
+      effect.className = "collectEffect";
+      effect.style.left = x + "px";
+      effect.style.top = y + "px";
+      document.body.appendChild(effect);
+      setTimeout(() => effect.remove(), 600);
+    }
+
+    function updateEnemies(cameraY) {
+      enemies.forEach(e => e.y += 2);
+      enemies = enemies.filter(e => e.y - cameraY < canvas.height + 100);
+      for (let e of enemies) {
+        if (
+          doodle.x < e.x + e.w &&
+          doodle.x + doodle.width > e.x &&
+          doodle.y < e.y + e.h &&
+          doodle.y + doodle.height > e.y
+        ) {
+          gameRunning = false;
+          restartBtn.style.display = "block";
+        }
+      }
+      if (Math.random() < 0.01) spawnEnemy();
+    }
+
+    function update() {
+      doodle.x += doodle.dx;
+      if (doodle.x < 0) doodle.x = 0;
+      if (doodle.x + doodle.width > canvas.width) doodle.x = canvas.width - doodle.width;
+
+      doodle.dy += gravity;
+      doodle.y += doodle.dy;
+
+      if (doodle.y < highPoint) highPoint = doodle.y;
+
+      platforms.forEach(p => {
+        p.x += p.dx;
+        if (p.x < 0 || p.x + p.w > canvas.width) p.dx *= -1;
+        if (
+          doodle.dy > 0 &&
+          doodle.x + doodle.width > p.x &&
+          doodle.x < p.x + p.w &&
+          doodle.y + doodle.height > p.y &&
+          doodle.y + doodle.height < p.y + p.h
+        ) {
+          doodle.dy = jumpVelocity;
+          jumpSound.play();
+          if (Math.random() < 0.3) triggerLightning();
+        }
+      });
+
+      items = items.filter(i => {
+        if (
+          doodle.x < i.x + i.w &&
+          doodle.x + doodle.width > i.x &&
+          doodle.y < i.y + i.h &&
+          doodle.y + doodle.height > i.y
+        ) {
+          collectSound.play();
+          createCollectEffect(i.x, i.y);
+          score += 5;
+          localStorage.setItem("raccoon_score", score);
+          scoreDisplay.innerText = "Kolikot: " + score;
+          return false;
+        }
+        return true;
+      });
+
+      let maxY = Math.min(...platforms.map(p => p.y));
+      while ((canvas.height - maxY) < maxHeight && platforms.length < 20) {
+        spawnPlatform(maxY - 100);
+        maxY -= 100;
+      }
+
+      updateEnemies(doodle.y - canvas.height / 2);
+
+      if (doodle.y > canvas.height + 200) {
+        gameRunning = false;
+        restartBtn.style.display = "block";
+      }
+    }
+
+    function drawEnemies(cameraY) {
+      enemies.forEach(e => {
+        ctx.drawImage(images.bird, e.x, e.y - cameraY, e.w, e.h);
+      });
+    }
+
+    function drawPlatform(p, cameraY) {
+      let grad = ctx.createLinearGradient(p.x, p.y - cameraY, p.x + p.w, p.y - cameraY + p.h);
+      grad.addColorStop(0, "#6affb5");
+      grad.addColorStop(1, "#00c0ff");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(p.x, p.y - cameraY, p.w, p.h, 5);
+      ctx.fill();
+    }
+
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+      if (w < 2 * r) r = w / 2;
+      if (h < 2 * r) r = h / 2;
+      this.beginPath();
+      this.moveTo(x + r, y);
+      this.arcTo(x + w, y, x + w, y + h, r);
+      this.arcTo(x + w, y + h, x, y + h, r);
+      this.arcTo(x, y + h, x, y, r);
+      this.arcTo(x, y, x + w, y, r);
+      this.closePath();
+      return this;
+    };
+
+    function draw() {
+      const cameraY = doodle.y - canvas.height / 2;
+
+      const gradient = ctx.createLinearGradient(0, -cameraY, 0, canvas.height - cameraY);
+      gradient.addColorStop(0, "#000000");
+      gradient.addColorStop(1, "#1a1a1a");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      drawFog(cameraY);
+      drawRain();
+
+      platforms.forEach(p => drawPlatform(p, cameraY));
+      items.forEach(i => {
+        ctx.drawImage(images[i.type], i.x, i.y - cameraY, i.w, i.h);
+      });
+
+      drawEnemies(cameraY);
+      ctx.drawImage(images.raccoon, doodle.x, doodle.y - cameraY, doodle.width, doodle.height);
+
+      // Draw doodle eyes glow
+      drawDoodleEyesGlow();
+
+      heightDisplay.innerText = "Korkeus: " + Math.round((canvas.height - highPoint) / 10);
+    }
+
+    function gameLoop() {
+      if (gameRunning) {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+      }
+    }
+
+    leftBtn.ontouchstart = () => doodle.dx = -moveSpeed;
+    rightBtn.ontouchstart = () => doodle.dx = moveSpeed;
+    leftBtn.ontouchend = rightBtn.ontouchend = () => doodle.dx = 0;
+
+    startBtn.onclick = () => {
+  startBtn.style.display = "none";
+  resetGame();
+  gameRunning = true;
+  bgMusic.currentTime = 0;
+  bgMusic.play();
+  gameLoop();
+  // Enable buttons
+  leftBtn.disabled = false;
+  rightBtn.disabled = false;
+};
+
+restartBtn.onclick = () => {
+  restartBtn.style.display = "none";
+  resetGame();
+  gameRunning = true;
+  bgMusic.currentTime = 0;
+  bgMusic.play();
+  gameLoop();
+  // Enable buttons
+  leftBtn.disabled = false;
+  rightBtn.disabled = false;
+};
+
+    function triggerLightning() {
+  const flash = document.createElement("div");
+  flash.className = "flash";
+  document.body.appendChild(flash);
+  thunderSound.play();
+  setTimeout(() => {
+    flash.remove();
+    leftBtn.disabled = false;
+    rightBtn.disabled = false;
+  }, 200);
+  leftBtn.disabled = true;
+  rightBtn.disabled = true;
+   
+      
+    }
+
+    function createRain() {
+      rainDrops = [];
+      for (let i = 0; i < 100; i++) {
+        rainDrops.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          l: 10 + Math.random() * 10,
+          speed: 2 + Math.random() * 4
+        });
+      }
+    }
+
+    function drawRain() {
+      ctx.strokeStyle = "rgba(173,216,230,0.5)";
+      ctx.lineWidth = 1;
+      rainDrops.forEach(r => {
+        ctx.beginPath();
+        ctx.moveTo(r.x, r.y);
+        ctx.lineTo(r.x, r.y + r.l);
+        ctx.stroke();
+        r.y += r.speed;
+        if (r.y > canvas.height) {
+          r.y = -20;
+          r.x = Math.random() * canvas.width;
+        }
+      });
+    }
+
+    function createFog() {
+      fogParticles = Array.from({ length: 50 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: 100 + Math.random() * 100,
+        speed: 0.1 + Math.random() * 0.3
+      }));
+    }
+
+    function drawFog(cameraY) {
+      ctx.fillStyle = "rgba(200, 200, 200, 0.03)";
+      fogParticles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y - cameraY * 0.1, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        p.x += p.speed;
+        if (p.x > canvas.width + p.radius) p.x = -p.radius;
+      });
+    }
+
+    function drawDoodleEyesGlow() {
+      const eyeX = doodle.x + doodle.width * 0.25;
+      const eyeY = doodle.y + doodle.height * 0.4 - (doodle.y - canvas.height / 2);
+      const eyeX2 = doodle.x + doodle.width * 0.65;
+      ctx.save();
+      ctx.fillStyle = "rgba(200, 0, 255, 0.8)";
+      ctx.shadowColor = "rgba(200, 0, 255, 0.8)";
+      ctx.shadowBlur = 15;
+      ctx.beginPath();
+      ctx.arc(eyeX, eyeY, 3, 0, Math.PI * 2);
+      ctx.arc(eyeX2, eyeY, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+        window.onload = () => {
+  images.raccoon = new Image();
+  images.raccoon.src = 'raccoon.png';
+  images.bird = new Image();
+  images.bird.src = 'bird.png';
+  images.pizza = new Image();
+  images.pizza.src = 'pizza.png';
+  images.fish = new Image();
+  images.fish.src = 'fish.png';
+  images.banana = new Image();
+  images.banana.src = 'banana.png';
+  images.coin = new Image();
+  images.coin.src = 'coin.png';
+  images.diamond = new Image();
+  images.diamond.src = 'diamond.png';
+
+  // Ensure all images are loaded before starting the game
+  const imagePromises = Object.values(images).map(img => {
+    return new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+    });
+  });
+
+  Promise.all(imagePromises).then(() => {
+    startBtn.style.display = "block";
+    leftBtn.disabled = false;
+    rightBtn.disabled = false;
+  }).catch(() => {
+    console.error("Failed to load images");
+  });
+};
+  </script>
+</body>
+</html>

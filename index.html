@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Raccoin Clicker</title>
+  <link href="https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="start-screen">
+    <h1>Raccoin Clicker</h1>
+    <button onclick="startGame()">Aloita peli</button>
+  </div>
+  
+  <!-- POPUPS -->
+  <div class="popup" id="lompakko">
+    <button class="close-btn" onclick="closePopup('lompakko')">X</button>
+    <h3>Lompakko</h3>
+    <p>Kolikot: <span id="coins_wallet">0</span></p>
+    <p>Taso: 1</p>
+    <p>Tokenit: 0</p>
+  </div>
+
+  <div class="popup" id="asetukset">
+    <button class="close-btn" onclick="closePopup('asetukset')">X</button>
+    <h3>Asetukset</h3>
+    <p>Musiikki: <span id="musicStatus">ON</span></p>
+    <p>Äänet: <span id="soundStatus">ON</span></p>
+    <button onclick="toggleMusic()">Vaihda musiikkia</button>
+    <button onclick="toggleSounds()">Vaihda ääniä</button>
+  </div>
+
+  <!-- Popup for Pelit -->
+  <div class="popup" id="pelit">
+    <button class="close-btn" onclick="closePopup('pelit')">X</button>
+    <h3>Pelit</h3>
+    <button onclick="openGame('Slotti.html')">Slottikone</button>
+    <button onclick="openGame('Estehyppely.html')">Estehyppely</button>
+    <button onclick="openGame('Miinakenttä.html')">Miinakenttä</button>
+    <button onclick="openGame('Pesukarhukainen.html')">Pesukarhukainen</button>
+    <button onclick="openGame('Pac-Karhu.html')">Pac-Karhu</button>
+  </div>
+
+  <!-- Popup for Kauppa -->
+  <div class="popup" id="kauppa">
+    <button class="close-btn" onclick="closePopup('kauppa')">X</button>
+    <h3>Kauppa</h3>
+    <button onclick="openGame('osta_kolikoita.html')">Osta kolikoita</button>
+    <button onclick="openGame('osta_pelilippuja.html')">Osta pelilippuja</button>
+    <button onclick="openGame('osta_esineita.html')">Osta esineitä</button>
+    <button onclick="openGame('osta_kortteja.html')">Osta kortteja</button>
+  </div>
+
+  <!-- Popup for Koti -->
+  <div class="popup" id="koti">
+    <button class="close-btn" onclick="closePopup('koti')">X</button>
+    <h3>Koti</h3>
+    <button onclick="openGame('ruokakomero.html')">Ruokakomero</button>
+    <button onclick="openGame('vaatekaappi.html')">Vaatekaappi</button>
+    <button onclick="openGame('varasto.html')">Varasto</button>
+    <button onclick="openGame('esineet.html')">Esineet</button>
+  </div>
+
+  <!-- Popup for Kehitä -->
+  <div class="popup" id="kehita">
+    <button class="close-btn" onclick="closePopup('kehita')">X</button>
+    <h3>Kehitä</h3>
+    <button onclick="openGame('parannukset.html')">Parannukset</button>
+    <button onclick="openGame('taidot.html')">Taidot</button>
+    <button onclick="openGame('tyokalut.html')">Työkalut</button>
+    <button onclick="openGame('kortit.html')">Kortit</button>
+    <button onclick="openGame('persoonallisuus.html')">Persoonallisuus</button>
+  </div>
+
+  <!-- Popup for Info -->
+  <div class="popup" id="info">
+    <button class="close-btn" onclick="closePopup('info')">X</button>
+    <h3>Info</h3>
+    <button onclick="openGame('mika_raccoin.html')">Mikä Raccoin?</button>
+    <button onclick="openGame('airdrop.html')">Airdrop</button>
+    <h4>Yhteisö</h4>
+    <ul>
+      <li><a href="https://t.me/your_telegram_link" target="_blank">Telegram</a></li>
+      <li><a href="https://www.instagram.com/your_instagram_link" target="_blank">Instagram</a></li>
+      <li><a href="https://twitter.com/your_twitter_link" target="_blank">Twitter</a></li>
+    </ul>
+  </div>
+
+  <div id="content">
+    <header>Raccoin Clicker</header>
+    <img src="https://i.ibb.co/9mzZ2Gsh/Polish-20250409-115814160.png" class="raccoon-img" onclick="earnCoin()">
+    <div class="particles" id="particles"></div>
+    <p>Kolikot: <span id="coins">1</span></p>
+    <div style="margin-top: 20px;">
+      <p>Onnellisuus: <progress value="80" max="100"></progress></p>
+      <p>Väsymys: <progress value="30" max="100"></progress></p>
+      <p>Nälkä: <progress value="60" max="100"></progress></p>
+    </div>
+  </div>
+
+  <div id="topbar">
+    <div>Nimi: Pelaaja<br>Taso: 1</div>
+    <div>
+      <button onclick="togglePopup('lompakko')">Lompakko</button>
+      <button onclick="togglePopup('asetukset')">Asetukset</button>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button onclick="togglePopup('pelit')">Pelit</button>
+    <button onclick="togglePopup('kauppa')">Kauppa</button>
+    <button onclick="togglePopup('koti')">Koti</button>
+    <button onclick="togglePopup('kehita')">Kehitä</button>
+    <button onclick="togglePopup('info')">Info</button>
+  </div>
+
+  <audio id="music" loop autoplay>
+    <source src="music.mp3" type="audio/mpeg">
+  </audio>
+
+  <script src="scripts.js"></script> 
+</body>
+</html>

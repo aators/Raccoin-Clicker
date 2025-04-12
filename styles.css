@@ -1,0 +1,240 @@
+body {
+  margin: 0;
+  font-family: 'UnifrakturCook', cursive;
+  background: linear-gradient(135deg, #2b103d, #111);
+  color: white;
+  overflow-x: hidden;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  text-align: center;
+  padding: 30px 10px;
+  font-size: 100px;
+  text-shadow: 0 0 20px #900, 0 0 30px #330000;
+  color: #e60000;
+}
+
+#topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  font-size: 16px;
+  background: linear gradient rgba(93,16,108,0.9);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.5);
+}
+
+#start-screen {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(135deg, #111, #2b103d);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  opacity: 0.95;
+}
+
+#start-screen button {
+  background: linear-gradient(45deg, #9b4d96, #57048c);
+  border: none;
+  padding: 20px 40px;
+  font-size: 22px;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 0 15px #000;
+  transition: all 0.3s ease-in-out;
+}
+
+#start-screen button:hover {
+  transform: scale(1.1);
+  background: linear-gradient(45deg, #57048c, #9b4d96);
+}
+
+#content {
+  margin-top: 120px;
+  text-align: center;
+  display: none;
+}
+
+.raccoon-img {
+  width: 200px;
+  height: auto;
+  cursor: pointer;
+  animation: pulse 2s infinite;
+  transition: transform 0.2s ease-in-out;
+}
+
+.raccoon-img:hover {
+  transform: scale(1.1);
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+  animation: explode 1s linear forwards;
+}
+
+@keyframes explode {
+  to {
+    transform: translate(0, -100px);
+    opacity: 0;
+  }
+}
+
+.nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear gradient rgba(93,16,108,0.9);
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 0;
+  z-index: 2;
+  box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.6);
+}
+
+.nav button {
+  background: #660066;
+  border: 1px solid #555;
+  color: white;
+  padding: 10px 18px;
+  font-family: 'UnifrakturCook', cursive;
+  font-size: 14px;
+  box-shadow: 0 0 5px black;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.nav button:hover {
+  background: linear-gradient(45deg, #57048c, #9b4d96);
+  transform: scale(1.05);
+}
+
+.popup {
+  display: none;
+  position: fixed;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a0d29;
+  border: 1px solid #333;
+  padding: 25px;
+  width: 90%;
+  max-width: 500px;
+  z-index: 5;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+  border-radius: 8px;
+}
+
+.popup h3 {
+  margin-top: 0;
+  font-size: 22px;
+  color: red;
+  box-shadow: violet;
+}
+
+.popup button {
+  display: block;
+  width: 100%;
+  background: #4d004d;
+  color: white;
+  border: 2px solid #111;
+  margin: 10px 0;
+  padding: 12px;
+  cursor: pointer;
+  transition: background 0.3s ease-in-out;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+
+}
+
+.popup .close-btn {
+  position: absolute;
+  top: 0px;
+  right: -125px;
+  background: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: none;
+  border: none;
+}
+
+audio {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  header {
+    font-size: 30px;
+  }
+
+  #start-screen button {
+    padding: 15px 30px;
+    font-size: 18px;
+  }
+
+  .nav button {
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+
+  .popup {
+    width: 80%;
+    max-width: 400px;
+  }
+
+  .raccoon-img {
+    width: 150px;
+  }
+
+  #topbar {
+    font-size: 14px;
+    padding: 8px 15px;
+  }
+}
+
+.wallet-btn, .settings-btn {
+  background: linear-gradient(45deg, #444, #2b103d); /* Tumma gradientti */
+  border: 1px solid #333;
+  color: white;
+  padding: 12px 20px;
+  font-size: 14px;
+  box-shadow: 0 0 5px #000;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.wallet-btn:hover, .settings-btn:hover {
+  background: linear-gradient(45deg, #2b103d, #444);
+  transform: scale(1.05);
+}
