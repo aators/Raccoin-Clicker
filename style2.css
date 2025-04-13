@@ -1,0 +1,101 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Orbitron', sans-serif;
+  color: red;
+  background-color: black;
+  overflow: hidden;
+}
+
+#top-bar {
+  background-color: #2a0033;
+  color: red;
+  text-align: center;
+  padding: 10px;
+  font-size: 1.5rem;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 2;
+}
+
+#room-container {
+  height: 100vh;
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 50px;
+}
+
+#raccoon {
+  max-height: 300px;
+  position: absolute;
+  left: 50%;
+  top: 60%;
+  transform: translate(-50%, -50%);
+  filter: brightness(1.2);
+  z-index: 1;
+  transition: transform 0.3s ease;
+}
+
+.arrow {
+  width: 50px;
+  height: 50px;
+  background-color: rgba(0, 0, 0, 0.3);
+  color: white;
+  font-size: 30px;
+  text-align: center;
+  line-height: 50px;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 2;
+  margin: 20px;
+}
+
+.arrow:hover {
+  background-color: rgba(255, 0, 0, 0.4);
+}
+
+.left {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.right {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+#button-bar {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: #2a0033;
+  text-align: center;
+  padding: 10px;
+  z-index: 2;
+}
+
+#button-bar button {
+  font-size: 1rem;
+  margin: 0 10px;
+  padding: 10px 20px;
+  background: black;
+  color: red;
+  border: 2px solid red;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+#button-bar button:hover {
+  background-color: red;
+  color: black;
+}

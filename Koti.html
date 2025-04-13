@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pesukarhun Koti</title>
+  <link rel="stylesheet" href="style2.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="top-bar">Makuuhuone</div>
+
+  <div id="room-container">
+    <div class="arrow left" onclick="previousRoom()">←</div>
+    <img id="raccoon" src="tyyli1.png" alt="Pesukarhu" />
+    <div class="arrow right" onclick="nextRoom()">→</div>
+  </div>
+
+  <div id="button-bar">
+    <button onclick="petRaccoon()">Rapsuta</button>
+    <button onclick="feedRaccoon()">Anna ruokaa</button>
+  </div>
+
+  <script src="script2.js"></script>
+</body>
+</html>
