@@ -1,177 +1,333 @@
 <!DOCTYPE html>
 <html lang="fi">
 <head>
-  <meta charset="UTF-8">
-  <title>Slottikone</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel&family=UnifrakturCook&family=Righteous&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pesukarhun Slottikone</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: 'Cinzel', serif;
-      background-color: #111;
-      color: #eee;
-      text-align: center;
-      padding: 20px;
+    html, body {
       margin: 0;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-
-    h1 {
-      font-family: 'Righteous', cursive;
-      font-size: 2.5rem;  /* Muutettu fonttikoko */
-      margin-bottom: 20px;
-      color: #ff0000;
-      text-shadow: 0 0 10px #900, 0 0 30px #ff0080;
-    }
-
-    #stats {
-      margin-bottom: 20px;
-      font-size: 1.2rem;
-      text-shadow: 0 0 5px #900, 0 0 10px #ff0080;
-    }
-
-    button {
-      background: linear-gradient(45deg, #9b4d96, #57048c);
-      color: white;
-      border: none;
-      padding: 15px 25px;
-      margin-bottom: 30px;
-      font-size: 1.5rem;
-      cursor: pointer;
-      box-shadow: 0 0 10px #000;
-      transition: all 0.3s ease-in-out;
-      border-radius: 8px;
-    }
-
-    button:hover {
-      transform: scale(1.1);
-      background: linear-gradient(45deg, #57048c, #9b4d96);
-    }
-
-    #slots {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 30px;
-      gap: 20px;
-    }
-
-    .slot {
-      width: 100px;
-      height: 100px;
-      margin: 0 10px;
-      background-color: #222;
+      padding: 0;
+      background: #0a0a0a url("sparkles.gif") center/cover no-repeat fixed;
       color: #fff;
-      font-size: 2rem;
+      font-family: 'Orbitron', sans-serif;
+      overflow: hidden;
+      height: 100%;
+    }
+
+    #loadingScreen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      color: #ff66cc;
+      font-size: 1.5rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 8px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+      z-index: 9999;
+      animation: fadeOut 2s forwards;
+      animation-delay: 2s;
     }
 
-    .slot:hover {
-      background-color: #444;
-      transform: scale(1.1);
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+    @keyframes fadeOut {
+      to { opacity: 0; visibility: hidden; }
     }
 
-    audio {
+    .game {
+      padding: 2rem;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      color: #ff66cc;
+      text-shadow: 0 0 10px #000;
+      animation: swing 2s infinite ease-in-out, glowTitle 2s infinite alternate;
+    }
+
+    @keyframes swing {
+      0% { transform: rotate(-2deg); }
+      50% { transform: rotate(2deg); }
+      100% { transform: rotate(-2deg); }
+    }
+
+    @keyframes glowTitle {
+      from { text-shadow: 0 0 10px #ff66cc; }
+      to { text-shadow: 0 0 20px #ff66cc, 0 0 30px #ff66cc; }
+    }
+
+    .slot-container {
+      display: flex;
+      justify-content: center;
+      margin: 2rem 0;
+    }
+
+    .reel {
+      width: 80px;
+      height: 80px;
+      margin: 0 8px;
+      perspective: 1000px;
+    }
+
+    .symbol {
+      width: 100%;
+      height: 100%;
+      font-size: 2.5rem;
+      background: #111;
+      border-radius: 10px;
+      line-height: 80px;
+      border: 3px solid #555;
+      animation: spinEffect 0.6s ease-in-out;
+      box-shadow: 0 0 10px #ff66cc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .symbol img {
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    @keyframes spinEffect {
+      0%   { transform: rotateX(0deg); }
+      100% { transform: rotateX(720deg); }
+    }
+
+    .spin-btn, .auto-btn, .double-btn {
+      padding: 0.8rem 1.2rem;
+      margin: 0.5rem;
+      background: #ff66cc;
+      border: none;
+      color: #000;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 0 10px #ff66cc;
+    }
+
+    .spin-btn:hover, .auto-btn:hover, .double-btn:hover {
+      background: #ff85da;
+    }
+
+    .result, .coinCount {
+      font-size: 1.2rem;
+      margin-top: 1rem;
+    }
+
+    .voittotaulukko {
+      font-size: 0.9rem;
+      margin-top: 2rem;
+      color: #ddd;
+    }
+
+    .particle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: #ff66cc;
+      border-radius: 50%;
+      animation: explode 1s linear forwards;
+      pointer-events: none;
+    }
+
+    @keyframes explode {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(2) translateY(-100px); opacity: 0; }
+    }
+
+    #bonusPopup, #doublePopup {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: #222;
+      border: 2px solid #ff66cc;
+      padding: 1rem;
       display: none;
+      z-index: 999;
+    }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 1.6rem; }
+      .spin-btn, .auto-btn, .double-btn { font-size: 0.9rem; padding: 0.6rem 1rem; }
     }
   </style>
 </head>
 <body>
-  <h1>Slottikone</h1>
-  <div id="stats">
-    <span id="balance">Kolikot: 100</span> | 
-    <span id="bet">Panos: 10</span>
-  </div>
-  <button onclick="spin()">Pelaa</button>
-  <div id="slots">
-    <div class="slot" id="slot1">🍒</div>
-    <div class="slot" id="slot2">🍇</div>
-    <div class="slot" id="slot3">🍉</div>
+  <div id="loadingScreen">Ladataan Slottikonetta...</div>
+
+  <div class="game">
+    <h1>Pesukarhun Slottikone</h1>
+    <div class="slot-container">
+      <div class="reel"><div class="symbol" id="slot1">?</div></div>
+      <div class="reel"><div class="symbol" id="slot2">?</div></div>
+      <div class="reel"><div class="symbol" id="slot3">?</div></div>
+    </div>
+    <button class="spin-btn" onclick="spin()">Pyöritä</button>
+    <button class="auto-btn" onclick="toggleAuto()">Autospins</button>
+    <button class="double-btn" onclick="showDouble()">Tuplaa</button>
+
+    <div class="result" id="result"></div>
+    <div class="coinCount" id="coinCount">Kolikoita: 100</div>
+    <div class="voittotaulukko">
+      <p>3x 🦝 = 50 | 3x 🐟 = 60 | 3x 🍕 = 70 | 3x 🍌 = 80</p>
+      <p>3x 💎 = 150 | 3x 💰 = 120 | 3x 🌀 = 200 | 3x BONUS = minipeli</p>
+    </div>
   </div>
 
-  <audio id="spinSound" src="spin.mp3"></audio>
-  <audio id="winSound" src="win.mp3"></audio>
-  <audio id="bgMusic" src="Slottikone.mp3" loop></audio>
+  <div id="bonusPopup">
+    <p>Valitse laatikko!</p>
+    <button onclick="chooseBox(0)">Laatikko 1</button>
+    <button onclick="chooseBox(1)">Laatikko 2</button>
+    <button onclick="chooseBox(2)">Laatikko 3</button>
+  </div>
+
+  <div id="doublePopup">
+    <p>Tuplaus: Kruuna vai Klaava?</p>
+    <button onclick="doubleGame('kruuna')">Kruuna</button>
+    <button onclick="doubleGame('klaava')">Klaava</button>
+  </div>
 
   <script>
-    // Haetaan saldo localStorage:stä, tai asetetaan oletussaldo
-    let balance = parseInt(localStorage.getItem("coins") || "100");
-    const bet = 10;
+    const items = ["🦝", "🐟", "🍕", "🍌", "💎", "💰", "🌀", "BONUS"];
+    let coins = parseInt(localStorage.getItem("coins")) || 100;
+    let autoSpin = false;
+    let lastWin = 0;
 
-    const balanceDisplay = document.getElementById('balance');
-    const betDisplay = document.getElementById('bet');
-    const spinSound = document.getElementById('spinSound');
-    const winSound = document.getElementById('winSound');
-    const bgMusic = document.getElementById('bgMusic');
+    const slots = ["slot1", "slot2", "slot3"].map(id => document.getElementById(id));
+    const resultDisplay = document.getElementById("result");
+    const coinDisplay = document.getElementById("coinCount");
+    const bonusPopup = document.getElementById("bonusPopup");
+    const doublePopup = document.getElementById("doublePopup");
 
-    spinSound.volume = 0.1;
+    const spinSound = new Audio("spin.mp3");
+    const winSound = new Audio("win.mp3");
+    const bonusSound = new Audio("bonus.mp3");
+    const music = new Audio("Slottikone.mp3");
+    music.loop = true;
+    music.volume = 0.3;
 
-    // Funktio, joka päivittää saldo UI:ssa ja tallentaa sen localStorageen
-    function updateBalance() {
-      balanceDisplay.textContent = `Kolikot: ${balance}`;
-      localStorage.setItem("coins", balance); // Tallennetaan saldo localStorageen
+    window.onload = () => {
+      setTimeout(() => document.getElementById("loadingScreen").style.display = "none", 2000);
+      music.play().catch(() => {});
+      updateCoins();
+    };
+
+    function updateCoins() {
+      coinDisplay.textContent = `Kolikoita: ${coins}`;
+      localStorage.setItem("coins", coins);
     }
 
-    // Funktio pelin pyöräytykselle
-    function spin() {
-      if (bgMusic.paused) {
-        bgMusic.volume = 0.3;
-        bgMusic.play().catch(err => console.log("Taustamusiikkia ei voitu toistaa:", err));
-      }
+    function getRandomItem() {
+      return items[Math.floor(Math.random() * items.length)];
+    }
 
-      if (balance < bet) {
-        alert("Saldo ei riitä!");
+    function createParticles(x, y) {
+      for (let i = 0; i < 10; i++) {
+        const p = document.createElement("div");
+        p.className = "particle";
+        p.style.left = `${x}px`;
+        p.style.top = `${y}px`;
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 1000);
+      }
+    }
+
+    function spin() {
+      if (coins < 5) {
+        resultDisplay.textContent = "Ei tarpeeksi kolikoita!";
         return;
       }
 
-      balance -= bet;
-      updateBalance(); // Päivitetään saldo
+      coins -= 5;
+      updateCoins();
+      resultDisplay.textContent = "";
       spinSound.play();
 
-      const fruits = ["🍒", "🍇", "🍉", "🍊", "🍋"];
-      const slot1 = document.getElementById('slot1');
-      const slot2 = document.getElementById('slot2');
-      const slot3 = document.getElementById('slot3');
+      const results = [];
+      for (let i = 0; i < 3; i++) {
+        const symbol = getRandomItem();
+        results.push(symbol);
+        if (symbol === "BONUS") {
+          slots[i].innerHTML = `<img src="bonus.png" alt="BONUS">`;
+        } else {
+          slots[i].textContent = symbol;
+        }
+        slots[i].classList.add("symbol");
+      }
 
-      slot1.textContent = fruits[Math.floor(Math.random() * fruits.length)];
-      slot2.textContent = fruits[Math.floor(Math.random() * fruits.length)];
-      slot3.textContent = fruits[Math.floor(Math.random() * fruits.length)];
+      const [a, b, c] = results;
+      if (a === b && b === c) {
+        let winAmount = 0;
+        switch (a) {
+          case "🦝": winAmount = 50; break;
+          case "🐟": winAmount = 60; break;
+          case "🍕": winAmount = 70; break;
+          case "🍌": winAmount = 80; break;
+          case "💎": winAmount = 150; break;
+          case "💰": winAmount = 120; break;
+          case "🌀": winAmount = 200; break;
+          case "BONUS":
+            winAmount = 100;
+            bonusPopup.style.display = "block";
+            bonusSound.play();
+            break;
+        }
+        coins += winAmount;
+        lastWin = winAmount;
+        resultDisplay.textContent = `Voitit ${winAmount} kolikkoa!`;
+        winSound.play();
+        createParticles(window.innerWidth / 2, window.innerHeight / 2);
+      } else {
+        lastWin = 0;
+        resultDisplay.textContent = "Ei voittoa.";
+      }
 
-      setTimeout(() => {
-        checkWin(slot1.textContent, slot2.textContent, slot3.textContent);
-      }, 1000);
+      updateCoins();
     }
 
-    // Funktio tarkistaa, voittiko pelaaja
-    function checkWin(symbol1, symbol2, symbol3) {
-      if (symbol1 === symbol2 && symbol2 === symbol3) {
-        winSound.play();
-        balance += bet * 5;
-        updateBalance(); // Päivitetään saldo
-        alert("Voitit!");
+    function toggleAuto() {
+      autoSpin = !autoSpin;
+      if (autoSpin) autoSpinLoop();
+    }
 
-        // Päivitetään Raccoin Clicker -pelin saldo (jos se on auki)
-        const coinsElement = window.opener?.document.getElementById('coins');
-        if (coinsElement) {
-          coinsElement.textContent = parseInt(coinsElement.textContent) + (bet * 5);
-        }
-      } else {
-        alert("Hävisit!");
+    function autoSpinLoop() {
+      if (!autoSpin) return;
+      spin();
+      setTimeout(autoSpinLoop, 2000);
+    }
+
+    function showDouble() {
+      if (lastWin > 0) {
+        doublePopup.style.display = "block";
       }
     }
 
-    // Päivitetään saldo UI:ssa pelin alussa
-    updateBalance();
-  </script>
+    function doubleGame(choice) {
+      const result = Math.random() < 0.5 ? "kruuna" : "klaava";
+      if (choice === result) {
+        coins += lastWin;
+        resultDisplay.textContent = `Voitit tuplauksen! +${lastWin} kolikkoa`;
+        winSound.play();
+      } else {
+        resultDisplay.textContent = "Hävisit tuplauksen!";
+        lastWin = 0;
+      }
+      doublePopup.style.display = "none";
+      updateCoins();
+    }
 
+    function chooseBox(index) {
+      const bonus = Math.floor(Math.random() * 100 + 1);
+      coins += bonus;
+      resultDisplay.textContent = `Voitit ${bonus} kolikkoa laatikosta!`;
+      bonusPopup.style.display = "none";
+      updateCoins();
+    }
+  </script>
 </body>
 </html>
