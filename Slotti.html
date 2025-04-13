@@ -85,6 +85,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
     }
 
     .symbol img {
@@ -97,7 +98,7 @@
       100% { transform: rotateX(720deg); }
     }
 
-    .spin-btn, .auto-btn, .double-btn {
+    .spin-btn, .auto-btn, .double-btn, .voittitaulukko-btn {
       padding: 0.8rem 1.2rem;
       margin: 0.5rem;
       background: #ff66cc;
@@ -110,16 +111,16 @@
       box-shadow: 0 0 10px #ff66cc;
     }
 
-    .spin-btn:hover, .auto-btn:hover, .double-btn:hover {
+    .spin-btn:hover, .auto-btn:hover, .double-btn:hover, .voittitaulukko-btn:hover {
       background: #ff85da;
     }
 
-    .result, .coinCount {
-      font-size: 1.2rem;
+    .result, .coinCount, .betAmount {
+      font-size: 0.8rem;
       margin-top: 1rem;
     }
 
-    .voittotaulukko {
+    .voittitaulukko {
       font-size: 0.9rem;
       margin-top: 2rem;
       color: #ddd;
@@ -140,7 +141,7 @@
       100% { transform: scale(2) translateY(-100px); opacity: 0; }
     }
 
-    #bonusPopup, #doublePopup {
+    #bonusPopup, #doublePopup, #voittitaulukkoPopup {
       position: fixed;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
@@ -151,9 +152,42 @@
       z-index: 999;
     }
 
+    .betControl {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+
+    .betControl button {
+      background-color: #444;
+      padding: 5px 8px;
+      border: none;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 0 5px;
+    }
+
+    .betControl button:hover {
+      background-color: #555;
+    }
+
+    .betControl input {
+      width: 50px;
+      text-align: center;
+      font-size: 1.2rem;
+      background-color: #222;
+      border: 2px solid #555;
+      color: #fff;
+      border-radius: 8px;
+    }
+
     @media (max-width: 600px) {
       h1 { font-size: 1.6rem; }
-      .spin-btn, .auto-btn, .double-btn { font-size: 0.9rem; padding: 0.6rem 1rem; }
+      .spin-btn, .auto-btn, .double-btn, .voittitaulukko-btn { font-size: 0.9rem; padding: 0.6rem 1rem; }
     }
   </style>
 </head>
@@ -170,13 +204,16 @@
     <button class="spin-btn" onclick="spin()">Pyöritä</button>
     <button class="auto-btn" onclick="toggleAuto()">Autospins</button>
     <button class="double-btn" onclick="showDouble()">Tuplaa</button>
+    <button class="voittitaulukko-btn" onclick="showVoittitaulukko()">Voittitaulukko</button>
+
+    <div class="betControl">
+      <button onclick="changeBet(-1)">&#8592;</button>
+      <input type="number" id="betAmountInput" value="5" min="1" readonly />
+      <button onclick="changeBet(1)">&#8594;</button>
+    </div>
 
     <div class="result" id="result"></div>
     <div class="coinCount" id="coinCount">Kolikoita: 100</div>
-    <div class="voittotaulukko">
-      <p>3x 🦝 = 50 | 3x 🐟 = 60 | 3x 🍕 = 70 | 3x 🍌 = 80</p>
-      <p>3x 💎 = 150 | 3x 💰 = 120 | 3x 🌀 = 200 | 3x BONUS = minipeli</p>
-    </div>
   </div>
 
   <div id="bonusPopup">
@@ -192,141 +229,186 @@
     <button onclick="doubleGame('klaava')">Klaava</button>
   </div>
 
+  <div id="voittitaulukkoPopup">
+    <p>Voittitaulukko</p>
+    <div class="voittitaulukko" id="voittitaulukko">
+      <p>3x 🦝 = <span id="win1">50</span> | 3x 🐟 = <span id="win2">60</span> | 3x 🍕 = <span id="win3">70</span> | 3x 🍌 = <span id="win4">80</span></p>
+      <p>3x 💎 = <span id="win5">150</span> | 3x 💰 = <span id="win6">120</span> | 3x 🌀 = <span id="win7">200</span> | 3x <img src="bonus.png" alt="BONUS" style="height: 20px;"> = minipeli</p>
+    </div>
+    <button onclick="closeVoittitaulukko()">Sulje</button>
+  </div>
+
   <script>
-    const items = ["🦝", "🐟", "🍕", "🍌", "💎", "💰", "🌀", "BONUS"];
-    let coins = parseInt(localStorage.getItem("coins")) || 100;
+    let coins = 100;
+    let betAmount = 5;
     let autoSpin = false;
-    let lastWin = 0;
+    let spinsLeft = 0;
+    let spinInterval;
 
-    const slots = ["slot1", "slot2", "slot3"].map(id => document.getElementById(id));
-    const resultDisplay = document.getElementById("result");
-    const coinDisplay = document.getElementById("coinCount");
-    const bonusPopup = document.getElementById("bonusPopup");
-    const doublePopup = document.getElementById("doublePopup");
-
-    const spinSound = new Audio("spin.mp3");
-    const winSound = new Audio("win.mp3");
-    const bonusSound = new Audio("bonus.mp3");
-    const music = new Audio("Slottikone.mp3");
-    music.loop = true;
-    music.volume = 0.3;
-
-    window.onload = () => {
-      setTimeout(() => document.getElementById("loadingScreen").style.display = "none", 2000);
-      music.play().catch(() => {});
-      updateCoins();
-    };
-
-    function updateCoins() {
-      coinDisplay.textContent = `Kolikoita: ${coins}`;
-      localStorage.setItem("coins", coins);
+    function updateCoinCount() {
+      document.getElementById("coinCount").innerText = `Kolikoita: ${coins}`;
     }
 
-    function getRandomItem() {
-      return items[Math.floor(Math.random() * items.length)];
+    function updateWinTable() {
+      const winMultipliers = {
+        1: betAmount * 10, // 3x 🦝
+        2: betAmount * 12, // 3x 🐟
+        3: betAmount * 15, // 3x 🍕
+        4: betAmount * 18, // 3x 🍌
+        5: betAmount * 25, // 3x 💎
+        6: betAmount * 20, // 3x 💰
+        7: betAmount * 30  // 3x 🌀
+      };
+      document.getElementById("win1").innerText = winMultipliers[1];
+      document.getElementById("win2").innerText = winMultipliers[2];
+      document.getElementById("win3").innerText = winMultipliers[3];
+      document.getElementById("win4").innerText = winMultipliers[4];
+      document.getElementById("win5").innerText = winMultipliers[5];
+      document.getElementById("win6").innerText = winMultipliers[6];
+      document.getElementById("win7").innerText = winMultipliers[7];
     }
 
-    function createParticles(x, y) {
-      for (let i = 0; i < 10; i++) {
-        const p = document.createElement("div");
-        p.className = "particle";
-        p.style.left = `${x}px`;
-        p.style.top = `${y}px`;
-        document.body.appendChild(p);
-        setTimeout(() => p.remove(), 1000);
-      }
+    function changeBet(amount) {
+      betAmount += amount;
+      if (betAmount < 1) betAmount = 1;
+      document.getElementById("betAmountInput").value = betAmount;
+      updateWinTable();
     }
 
     function spin() {
-      if (coins < 5) {
-        resultDisplay.textContent = "Ei tarpeeksi kolikoita!";
+      if (coins < betAmount) {
+        alert("Ei tarpeeksi kolikoita!");
         return;
       }
 
-      coins -= 5;
-      updateCoins();
-      resultDisplay.textContent = "";
-      spinSound.play();
+      coins -= betAmount;
+      updateCoinCount();
+      animateSpin();
+      checkWin();
+    }
 
-      const results = [];
-      for (let i = 0; i < 3; i++) {
-        const symbol = getRandomItem();
-        results.push(symbol);
-        if (symbol === "BONUS") {
-          slots[i].innerHTML = `<img src="bonus.png" alt="BONUS">`;
-        } else {
-          slots[i].textContent = symbol;
-        }
-        slots[i].classList.add("symbol");
+    function animateSpin() {
+      let reels = ["slot1", "slot2", "slot3"];
+      reels.forEach(reel => {
+        let randomSymbol = Math.floor(Math.random() * 6) + 1;
+        document.getElementById(reel).style.animation = "spinEffect 0.6s ease-in-out";
+        setTimeout(() => {
+          document.getElementById(reel).innerHTML = getSymbol(randomSymbol);
+        }, 600);
+      });
+    }
+
+    function getSymbol(random) {
+      switch(random) {
+        case 1: return "🦝";
+        case 2: return "🐟";
+        case 3: return "🍕";
+        case 4: return "🍌";
+        case 5: return "💎";
+        case 6: return "💰";
+        case 7: return `<img src="bonus.png" alt="BONUS" style="height: 40px;">`;
+        default: return "?";
       }
+    }
 
-      const [a, b, c] = results;
-      if (a === b && b === c) {
+    function checkWin() {
+      let symbols = [
+        document.getElementById("slot1").innerHTML,
+        document.getElementById("slot2").innerHTML,
+        document.getElementById("slot3").innerHTML
+      ];
+
+      if (symbols[0] === symbols[1] && symbols[1] === symbols[2]) {
         let winAmount = 0;
-        switch (a) {
-          case "🦝": winAmount = 50; break;
-          case "🐟": winAmount = 60; break;
-          case "🍕": winAmount = 70; break;
-          case "🍌": winAmount = 80; break;
-          case "💎": winAmount = 150; break;
-          case "💰": winAmount = 120; break;
-          case "🌀": winAmount = 200; break;
-          case "BONUS":
-            winAmount = 100;
-            bonusPopup.style.display = "block";
-            bonusSound.play();
-            break;
+        if (symbols[0] === "🦝") winAmount = 50;
+        if (symbols[0] === "🐟") winAmount = 60;
+        if (symbols[0] === "🍕") winAmount = 70;
+        if (symbols[0] === "🍌") winAmount = 80;
+        if (symbols[0] === "💎") winAmount = 150;
+        if (symbols[0] === "💰") winAmount = 120;
+        if (symbols[0] === "<img src=\"bonus.png\" alt=\"BONUS\" style=\"height: 40px;\">") {
+          showBonusPopup();
+          return;
         }
-        coins += winAmount;
-        lastWin = winAmount;
-        resultDisplay.textContent = `Voitit ${winAmount} kolikkoa!`;
-        winSound.play();
-        createParticles(window.innerWidth / 2, window.innerHeight / 2);
-      } else {
-        lastWin = 0;
-        resultDisplay.textContent = "Ei voittoa.";
-      }
 
-      updateCoins();
+        coins += winAmount;
+        updateCoinCount();
+        document.getElementById("result").innerText = `Voitit: ${winAmount} kolikkoa!`;
+      } else {
+        document.getElementById("result").innerText = "Ei voittoa.";
+      }
+      updateWinTable();
+    }
+
+    function showBonusPopup() {
+      document.getElementById("bonusPopup").style.display = "block";
+    }
+
+    function chooseBox(boxNumber) {
+      let winnings = Math.floor(Math.random() * 100) + 1;
+      coins += winnings;
+      document.getElementById("result").innerText = `Bonusvoitto: ${winnings} kolikkoa!`;
+      updateCoinCount();
+      document.getElementById("bonusPopup").style.display = "none";
+    }
+
+    function showDouble() {
+      document.getElementById("doublePopup").style.display = "block";
+    }
+
+    function doubleGame(choice) {
+      let isWin = Math.random() < 0.5;
+      if (isWin) {
+        coins += betAmount;
+        document.getElementById("result").innerText = `Voitit tuplauksen!`;
+      } else {
+        coins -= betAmount;
+        document.getElementById("result").innerText = `Hävisit tuplauksen!`;
+      }
+      document.getElementById("doublePopup").style.display = "none";
+      updateCoinCount();
     }
 
     function toggleAuto() {
       autoSpin = !autoSpin;
-      if (autoSpin) autoSpinLoop();
-    }
-
-    function autoSpinLoop() {
-      if (!autoSpin) return;
-      spin();
-      setTimeout(autoSpinLoop, 2000);
-    }
-
-    function showDouble() {
-      if (lastWin > 0) {
-        doublePopup.style.display = "block";
+      if (autoSpin) {
+        spinsLeft = 10; // For example, 10 autospins
+        spinInterval = setInterval(() => {
+          if (spinsLeft > 0) {
+            spin();
+            spinsLeft--;
+          } else {
+            clearInterval(spinInterval);
+          }
+        }, 1500);
       }
     }
 
-    function doubleGame(choice) {
-      const result = Math.random() < 0.5 ? "kruuna" : "klaava";
-      if (choice === result) {
-        coins += lastWin;
-        resultDisplay.textContent = `Voitit tuplauksen! +${lastWin} kolikkoa`;
-        winSound.play();
-      } else {
-        resultDisplay.textContent = "Hävisit tuplauksen!";
-        lastWin = 0;
-      }
-      doublePopup.style.display = "none";
-      updateCoins();
+    function showVoittitaulukko() {
+      document.getElementById("voittitaulukkoPopup").style.display = "block";
     }
 
-    function chooseBox(index) {
-      const bonus = Math.floor(Math.random() * 100 + 1);
-      coins += bonus;
-      resultDisplay.textContent = `Voitit ${bonus} kolikkoa laatikosta!`;
-      bonusPopup.style.display = "none";
-      updateCoins();
+    function closeVoittitaulukko() {
+      document.getElementById("voittitaulukkoPopup").style.display = "none";
+    }
+
+    window.onload = function() {
+      setTimeout(() => {
+        document.getElementById("loadingScreen").style.display = "none";
+      }, 3000);
+
+      // Load coins from local storage
+      const savedCoins = localStorage.getItem('coins');
+      if (savedCoins) {
+        coins = parseInt(savedCoins);
+      }
+      updateCoinCount();
+    };
+
+    // Save coins to local storage whenever they change
+    function updateCoinCount() {
+      document.getElementById("coinCount").innerText = `Kolikoita: ${coins}`;
+      localStorage.setItem('coins', coins);
     }
   </script>
 </body>
