@@ -2,224 +2,304 @@
 <html lang="fi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pesukarhukainen</title>
+  <link href="https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap" rel="stylesheet" />
+  
   <style>
-    body {
+    /* Peli optimointi mobiililaitteille */
+    html, body {
       margin: 0;
-      background: #0d0d0d;
-      font-family: 'Arial', sans-serif;
-      color: #eee;
-      text-align: center;
+      padding: 0;
+      overflow: hidden;
+      height: 100%;
+      width: 100%;
+      background: url('pesukarhukori.png') no-repeat center center fixed;
+      background-size: cover;
+      font-family: 'UnifrakturCook', cursive;
+      color: #fff;
     }
 
-    #start-screen, #game-over {
+    h1 {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(2rem, 6vw, 4rem);
+      text-shadow: 0 0 20px #8800ff, 0 0 40px #000;
+      z-index: 10;
+    }
+
+    #score {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: clamp(1rem, 4vw, 2rem);
+      text-shadow: 0 0 10px #fff, 0 0 20px #aa00ffcc;
+      z-index: 10;
+    }
+
+    .item {
+      position: absolute;
+      width: clamp(80px, 15vw, 100px);
+      height: clamp(80px, 15vw, 100px);
+      cursor: pointer;
+      animation: floatSpin 3s linear infinite;
+      filter: drop-shadow(0 0 10px #ffffff33) drop-shadow(0 0 15px #aa00ffcc);
+      transition: transform 0.1s ease;
+      z-index: 5;
+    }
+
+    .item:active {
+      transform: scale(0.85);
+    }
+
+    @keyframes floatSpin {
+      0% { transform: rotate(0deg) translateY(0); }
+      50% { transform: rotate(180deg) translateY(5px); }
+      100% { transform: rotate(360deg) translateY(0); }
+    }
+
+    /* Aloita peli */
+    #startBtn {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(20, 20, 20, 0.9);
-      padding: 30px;
-      border: 2px solid #666;
+      font-size: 2rem;
+      padding: 20px 40px;
+      background: #111;
+      color: #fff;
       border-radius: 10px;
+      cursor: pointer;
+      z-index: 20;
+      display: block;
+    }
+
+    #startBtn:hover {
+      background: #222;
+    }
+
+    /* Pelin loppu */
+    #gameOver {
       display: none;
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.5rem; /* Normaalimpi ja pienempi fonttikoko */
+      color: red;
+      text-shadow: 0 0 10px black;
+      z-index: 100;
+    }
+
+    #restartBtn {
+      display: none;
+      position: absolute;
+      top: 55%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.5rem;
+      background: #111;
+      color: #fff;
+      padding: 10px 20px;
+      border: 2px solid #8800ff;
+      border-radius: 10px;
+      cursor: pointer;
+      z-index: 100;
+    }
+
+    #restartBtn:hover {
+      background: #222;
+    }
+
+    /* Tassu */
+    .paw {
+      position: absolute;
+      width: 250px; /* Tassu on nyt 5 kertaa suurempi */
+      height: 250px; /* Tassu on nyt 5 kertaa suurempi */
+      background: url('tassu.png') no-repeat center center;
+      background-size: cover;
+      cursor: pointer;
+      z-index: 10;
+      animation: disappear 0.5s forwards; /* Tassu katoaa nopeammin */
+    }
+
+    @keyframes disappear {
+      0% { opacity: 1; }
+      100% { opacity: 0; transform: scale(0); }
+    }
+
+    /* Sumut ja sateet */
+    .fog, .rain {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
       z-index: 2;
     }
 
-    #start-screen h1 {
-      font-size: 36px;
-      color: #a83232;
+    .fog {
+      background: radial-gradient(circle, rgba(200, 200, 255, 0.05) 0%, transparent 80%);
+      animation: fogMove 6s ease-in-out infinite alternate;
     }
 
-    button {
-      padding: 10px 20px;
-      background-color: #222;
-      color: white;
-      border: 1px solid #555;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
+    @keyframes fogMove {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-10px); }
     }
 
-    canvas {
-      display: block;
-      margin: 0 auto;
-      background-color: #1a1a1a;
-      border: 2px solid #444;
+    .rain {
+      background-image: repeating-linear-gradient(transparent, transparent 2px, rgba(255,255,255,0.1) 3px);
+      animation: rainFall 0.5s linear infinite;
     }
 
-    #scoreboard {
+    @keyframes rainFall {
+      0% { background-position-y: 0; }
+      100% { background-position-y: 100%; }
+    }
+
+    .particle {
       position: absolute;
-      top: 10px;
-      left: 10px;
-      color: #fff;
-      font-size: 18px;
-      z-index: 1;
-      text-align: left;
+      width: 10px;
+      height: 10px;
+      background: #ff00ff;
+      border-radius: 50%;
+      opacity: 0.8;
+      pointer-events: none;
+      z-index: 20;
     }
+
   </style>
 </head>
 <body>
-  <div id="start-screen">
-    <h1>Pesukarhukainen</h1>
-    <button onclick="startGame()">Aloita</button>
-  </div>
-
-  <div id="scoreboard">
-    <div>Pisteet: <span id="score">0</span></div>
-    <div>Highscore: <span id="highscore">0</span></div>
-  </div>
-
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
-
-  <div id="game-over">
-    <p>Peli päättyi, aloita alusta!</p>
-    <button onclick="restartGame()">Aloita alusta</button>
-  </div>
-
-  <audio id="collectSound" src="kerää.mp3" preload="auto"></audio>
-  <audio id="gameMusic" src="Pesukarhukainen.mp3" loop></audio>
+  <h1>Pesukarhukainen</h1>
+  <div id="score">Pisteet: 0</div>
+  <button id="startBtn">Aloita peli</button>
+  <div class="fog"></div>
+  <div class="rain"></div>
+  <div id="gameOver">PELI PÄÄTTYI</div>
+  <button id="restartBtn">Aloita uudelleen</button>
+  <audio id="backgroundMusic" src="Pesukarhukainen.mp3" preload="auto"></audio>
+  <audio id="clickSound" src="click.mp3" preload="auto"></audio>
 
   <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    let raccoon = { x: 100, y: 100, size: 40, speed: 4 };
-    let items = [];
-    let enemies = [];
-    let keys = {};
+    const startBtn = document.getElementById('startBtn');
+    const backgroundMusic = document.getElementById('backgroundMusic');
+    const scoreDisplay = document.getElementById('score');
+    const gameOverDisplay = document.getElementById('gameOver');
+    const restartBtn = document.getElementById('restartBtn');
+    const clickSound = document.getElementById('clickSound');
+
     let score = 0;
-    let highscore = Number(localStorage.getItem('raccoon_highscore')) || 0;
     let gameRunning = false;
+    let itemInterval;
 
-    const collectSound = document.getElementById('collectSound');
-    const gameMusic = document.getElementById('gameMusic');
-    gameMusic.volume = 0.4;
-
-    function loadImage(src) {
-      const img = new Image();
-      img.src = src;
-      return img;
-    }
-
-    const raccoonImg = loadImage('raccoon.png');
-    const itemImgs = ['pizza.png', 'fish.png', 'banana.png', 'coin.png', 'diamond.png'].map(loadImage);
-    const birdImg = loadImage('bird.png');
-
-    function drawRaccoon() {
-      ctx.drawImage(raccoonImg, raccoon.x, raccoon.y, raccoon.size, raccoon.size);
-    }
-
-    function spawnItem() {
-      const img = itemImgs[Math.floor(Math.random() * itemImgs.length)];
-      items.push({
-        x: Math.random() * (canvas.width - 30),
-        y: Math.random() * (canvas.height - 30),
-        size: 30,
-        img
-      });
-    }
-
-    function spawnEnemy() {
-      enemies.push({
-        x: Math.random() * (canvas.width - 30),
-        y: -40,
-        size: 40,
-        speed: 2 + Math.random() * 2
-      });
-    }
-
-    function drawItems() {
-      for (const item of items) {
-        ctx.drawImage(item.img, item.x, item.y, item.size, item.size);
-      }
-    }
-
-    function drawEnemies() {
-      for (const e of enemies) {
-        ctx.drawImage(birdImg, e.x, e.y, e.size, e.size);
-        e.y += e.speed;
-      }
-    }
-
-    function checkCollisions() {
-      items = items.filter(item => {
-        const dx = item.x - raccoon.x;
-        const dy = item.y - raccoon.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < 30) {
-          score += 10;
-          document.getElementById('score').innerText = score;
-          if (score > highscore) {
-            highscore = score;
-            localStorage.setItem('raccoon_highscore', highscore);
-            document.getElementById('highscore').innerText = highscore;
-          }
-          collectSound.play();
-          return false;
-        }
-        return true;
-      });
-
-      for (const enemy of enemies) {
-        const dx = enemy.x - raccoon.x;
-        const dy = enemy.y - raccoon.y;
-        if (Math.sqrt(dx * dx + dy * dy) < 35) {
-          gameOver();
-        }
-      }
-    }
-
-    function moveRaccoon() {
-      if (keys['ArrowUp']) raccoon.y -= raccoon.speed;
-      if (keys['ArrowDown']) raccoon.y += raccoon.speed;
-      if (keys['ArrowLeft']) raccoon.x -= raccoon.speed;
-      if (keys['ArrowRight']) raccoon.x += raccoon.speed;
-      raccoon.x = Math.max(0, Math.min(canvas.width - raccoon.size, raccoon.x));
-      raccoon.y = Math.max(0, Math.min(canvas.height - raccoon.size, raccoon.y));
-    }
-
-    function gameLoop() {
-      if (!gameRunning) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      moveRaccoon();
-      drawRaccoon();
-      drawItems();
-      drawEnemies();
-      checkCollisions();
-      requestAnimationFrame(gameLoop);
-    }
+    // Aloita peli
+    startBtn.addEventListener('click', startGame);
 
     function startGame() {
-      score = 0;
-      document.getElementById('score').innerText = score;
-      document.getElementById('highscore').innerText = highscore;
       gameRunning = true;
-      items = [];
-      enemies = [];
-      raccoon.x = 100;
-      raccoon.y = 100;
-      document.getElementById('start-screen').style.display = 'none';
-      document.getElementById('game-over').style.display = 'none';
-      for (let i = 0; i < 5; i++) spawnItem();
-      setInterval(spawnItem, 3000);
-      setInterval(spawnEnemy, 2000);
-      gameLoop();
-      gameMusic.play();
+      score = 0;
+      scoreDisplay.textContent = 'Pisteet: 0';
+      startBtn.style.display = 'none';
+      backgroundMusic.play();
+      itemInterval = setInterval(spawnItem, 600);
     }
 
-    function gameOver() {
+    // Peli loppuu
+    function endGame() {
       gameRunning = false;
-      gameMusic.pause();
-      document.getElementById('game-over').style.display = 'block';
+      gameOverDisplay.style.display = 'block';
+      restartBtn.style.display = 'block';
+      clearInterval(itemInterval);
+      backgroundMusic.pause();
     }
+
+    // Aloita peli uudelleen
+    restartBtn.addEventListener('click', restartGame);
 
     function restartGame() {
-      startGame();
+      gameRunning = true;
+      score = 0;
+      scoreDisplay.textContent = 'Pisteet: 0';
+      gameOverDisplay.style.display = 'none';
+      restartBtn.style.display = 'none';
+      startBtn.style.display = 'none';
+      document.querySelectorAll('.item').forEach(el => el.remove());
+      backgroundMusic.play();
+      itemInterval = setInterval(spawnItem, 600);
     }
 
-    document.addEventListener('keydown', e => keys[e.key] = true);
-    document.addEventListener('keyup', e => keys[e.key] = false);
-    document.getElementById('start-screen').style.display = 'block';
+    // Lisätään tavaroita peliin
+    function spawnItem() {
+      if (!gameRunning) return;
+
+      const item = document.createElement('img');
+      const rand = Math.random();
+      let points = 1;
+
+      if (rand < 0.15) {
+        item.src = 'diamond.png';
+        points = 5;
+      } else if (rand < 0.3) {
+        item.src = 'bird.png';
+        points = 'enemy';
+      } else {
+        item.src = 'raccoon.png';
+      }
+
+      item.className = 'item';
+      item.style.left = Math.random() * (window.innerWidth - 100) + 'px';
+      item.style.top = '-80px';
+      document.body.appendChild(item);
+
+      let speed = 4 + Math.random() * 2;
+      let posY = -80;
+
+      const fallInterval = setInterval(() => {
+        if (!gameRunning) {
+          clearInterval(fallInterval);
+          item.remove();
+          return;
+        }
+
+        posY += speed;
+        item.style.top = posY + 'px';
+
+        if (posY > window.innerHeight) {
+          clearInterval(fallInterval);
+          item.remove();
+        }
+      }, 20);
+
+      item.addEventListener('click', () => {
+        clickSound.play();
+
+        if (points === 'enemy') {
+          endGame();
+        } else {
+          score += points;
+          scoreDisplay.textContent = 'Pisteet: ' + score;
+          item.remove();
+        }
+      });
+    }
+
+    // Luodaan tassu
+    document.body.addEventListener('click', (e) => {
+      if (gameRunning) {
+        const paw = document.createElement('div');
+        paw.className = 'paw';
+        paw.style.left = e.clientX - 125 + 'px'; // Tassun keskipisteen siirtäminen
+        paw.style.top = e.clientY - 125 + 'px';
+        document.body.appendChild(paw);
+
+        setTimeout(() => {
+          paw.remove();
+        }, 500); // Tassu katoaa nopeammin
+      }
+    });
   </script>
 </body>
 </html>
